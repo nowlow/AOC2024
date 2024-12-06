@@ -124,24 +124,35 @@ fn test_loop(map: &mut Map) -> bool {
     false
 }
 
+fn get_guard_visits(map: &mut Map) -> Vec<(usize, usize)> {
+    let mut visited: Vec<(usize, usize)> = vec![(map.x, map.y)];
+
+    while move_guard(map) != Next::Out {
+        if visited.iter().find(|p| **p == (map.x, map.y)).is_none() {
+            visited.push((map.x, map.y));
+        }
+    }
+
+    visited
+}
+
 fn get_result_2(map: &Map) -> usize {
     let mut total = 0;
 
+    let visited = get_guard_visits(&mut map.clone());
+
     for y in 0..map.height {
         for x in 0..map.width {
+            if visited.iter().find(|p| **p == (x, y)).is_none() {
+                continue;
+            }
             if x == map.x && y == map.y || map.lines[y].chars().nth(x).unwrap() != '.' {
                 continue;
             }
             let mut new_map = map.clone();
             new_map.lines[y].replace_range(x..x + 1, "O");
 
-            // for line in new_map.lines.clone() {
-            //     println!("{line}");
-            // }
-
-            // println!("try {:?}", (x, y));
             if test_loop(&mut new_map) {
-                // println!("test conclued with {:?}", (x, y));
                 total += 1;
             }
         }
@@ -151,15 +162,7 @@ fn get_result_2(map: &Map) -> usize {
 }
 
 fn get_result_1(map: &mut Map) -> usize {
-    let mut visited: Vec<(usize, usize)> = vec![(map.x, map.y)];
-
-    while move_guard(map) != Next::Out {
-        if visited.iter().find(|p| **p == (map.x, map.y)).is_none() {
-            visited.push((map.x, map.y));
-        }
-    }
-
-    visited.len()
+    get_guard_visits(map).len()
 }
 
 fn parse_content(content: String) -> Map {
