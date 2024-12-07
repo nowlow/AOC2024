@@ -16,7 +16,7 @@ fn evaluate_expression(numbers: &[i64], ops: &[char]) -> i64 {
             }
             '/' => {
                 if next == 0 || result % next != 0 {
-                    return i64::MIN; // Invalid operation
+                    return i64::MIN;
                 }
                 result / next
             }
@@ -72,17 +72,6 @@ fn get_result_1(operations: &Vec<Operation>) -> i64 {
 
     for operation in operations {
         if let Some(_op) = can_make_target(&operation.1, operation.0, &vec!['*', '+']) {
-            // for _ in 0..operation.1.len() - 1 {
-            //     print!("(");
-            // }
-
-            // for i in 0..operation.1.len() {
-            //     if i < operation.1.len() - 1 {
-            //         print!("{}) {} ", operation.1[i], op[i]);
-            //     } else {
-            //         println!("{} == {}", operation.1[i], operation.0);
-            //     }
-            // }
             total += operation.0;
         }
     }
