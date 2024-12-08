@@ -24,6 +24,7 @@ fn multiply_vector(p1: &Point, p2: &Point, multiplier: i32, map: &Map) -> Option
     None
 }
 
+#[allow(unused)]
 fn add_to_vector(p1: &Point, p2: &Point, n: f32, map: &Map) -> Option<Point> {
     let length = (((p2.0 - p1.0).pow(2) + (p2.1 - p1.1).pow(2)) as f32).sqrt();
 
