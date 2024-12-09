@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::io::Error;
 use std::{env, fs};
 
@@ -75,7 +74,7 @@ fn print_diskmap(indexes: &Vec<Option<u64>>) {
 
 fn get_result_1(diskmap: &Vec<u64>) -> u64 {
     let mut total = 0;
-    let mut free_blocks: VecDeque<(usize, u64)> = VecDeque::new();
+    let mut free_blocks: Vec<(usize, u64)> = vec![];
     let mut file_blocks: Vec<(usize, usize, u64)> = vec![];
 
     for i in (0..diskmap.len()).step_by(2) {
@@ -84,7 +83,7 @@ fn get_result_1(diskmap: &Vec<u64>) -> u64 {
 
     for i in (1..diskmap.len()).step_by(2) {
         if diskmap[i] > 0 {
-            free_blocks.push_back((i, diskmap[i]));
+            free_blocks.push((i, diskmap[i]));
         }
     }
 
