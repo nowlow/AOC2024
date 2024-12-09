@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::io::Error;
 use std::{env, fs};
 
@@ -51,22 +52,11 @@ fn get_result_2(diskmap: &Vec<u64>) -> u64 {
     total
 }
 
-fn expand_diskmap(diskmap: &Vec<u64>) -> Vec<Option<u64>> {
-    let mut result: Vec<Option<u64>> = vec![];
-
-    for i in 0..diskmap.len() {
-        let n = diskmap[i];
-
-        for _ in 0..n {
-            if i % 2 == 0 {
-                result.push(Some((i / 2) as u64));
-            } else {
-                result.push(None);
-            }
-        }
-    }
-
-    result
+#[allow(dead_code)]
+fn init_debug(diskmap: &Vec<u64>) -> Vec<Option<u64>> {
+    std::iter::repeat_with(|| None)
+        .take((block_starts_at(diskmap.len() - 1, diskmap) + diskmap[diskmap.len() - 1]) as usize)
+        .collect::<Vec<_>>()
 }
 
 #[allow(dead_code)]
@@ -83,47 +73,49 @@ fn print_diskmap(indexes: &Vec<Option<u64>>) {
     println!();
 }
 
-fn create_checksum(diskmap: &Vec<u64>) -> u64 {
-    let mut expanded = expand_diskmap(diskmap);
+fn get_result_1(diskmap: &Vec<u64>) -> u64 {
     let mut total = 0;
+    let mut free_blocks: VecDeque<(usize, u64)> = VecDeque::new();
+    let mut file_blocks: Vec<(usize, usize, u64)> = vec![];
 
-    for i in 0..expanded.len() {
-        if expanded[i..]
-            .iter()
-            .find(|p| match p {
-                Some(_) => true,
-                None => false,
-            })
-            .is_none()
-        {
-            break;
+    for i in (0..diskmap.len()).step_by(2) {
+        file_blocks.push((i, i / 2, diskmap[i]));
+    }
+
+    for i in (1..diskmap.len()).step_by(2) {
+        if diskmap[i] > 0 {
+            free_blocks.push_back((i, diskmap[i]));
         }
+    }
 
-        if let Some(file) = expanded[i] {
-            total += (i as u64) * file;
-        } else {
-            let last_file = expanded
-                .iter()
-                .enumerate()
-                .rev()
-                .find(|(_, x)| x.is_some())
-                .map(|(i, _)| i)
-                .unwrap();
+    let mut current_block_index = 0;
 
-            if let Some(file) = expanded[last_file] {
-                total += (i as u64) * file;
+    for (index, file_id, file_size) in file_blocks.iter_mut().rev() {
+        while *file_size > 0 {
+            if *index < free_blocks[current_block_index].0 {
+                let new_index = block_starts_at(*index, diskmap)
+                    + (diskmap[*index] - (diskmap[*index] - *file_size + 1));
+
+                total += new_index * (*file_id as u64);
             } else {
-                unreachable!();
+                let (block_index, block_size) = &mut free_blocks[current_block_index];
+
+                let new_index =
+                    block_starts_at(*block_index, diskmap) + (diskmap[*block_index] - *block_size);
+
+                total += new_index * (*file_id as u64);
+
+                *block_size -= 1;
+
+                if *block_size == 0 {
+                    current_block_index += 1;
+                }
             }
-            expanded.swap(i, last_file);
+            *file_size -= 1;
         }
     }
 
     total
-}
-
-fn get_result_1(diskmap: &Vec<u64>) -> u64 {
-    create_checksum(diskmap)
 }
 
 fn parse_content(content: String) -> Vec<u64> {
