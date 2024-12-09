@@ -13,10 +13,6 @@ fn get_result_2(diskmap: &Vec<u64>) -> u64 {
     let mut total = 0;
     let mut free_blocks: Vec<(usize, u64)> = vec![];
 
-    let mut debug: Vec<Option<u64>> = std::iter::repeat_with(|| None)
-        .take((block_starts_at(diskmap.len() - 1, diskmap) + *diskmap.last().unwrap()) as usize)
-        .collect::<Vec<_>>();
-
     for i in (1..diskmap.len()).step_by(2) {
         free_blocks.push((i, diskmap[i]));
     }
@@ -32,14 +28,11 @@ fn get_result_2(diskmap: &Vec<u64>) -> u64 {
             }
 
             if *block_size >= file_size {
-                // println!("can include {file_id} in {block_index}");
                 for j in 0..file_size {
                     let new_index = block_starts_at(*block_index, diskmap)
                         + (diskmap[*block_index] - *block_size)
                         + j;
                     total += new_index * file_id as u64;
-
-                    debug[new_index as usize] = Some(file_id as u64);
                 }
                 *block_size -= file_size;
                 has_been_included = true;
@@ -51,7 +44,6 @@ fn get_result_2(diskmap: &Vec<u64>) -> u64 {
             for j in 0..file_size {
                 let new_index = block_starts_at(i, diskmap) + j;
                 total += new_index * file_id as u64;
-                debug[new_index as usize] = Some(file_id as u64);
             }
         }
     }
