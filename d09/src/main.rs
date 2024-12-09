@@ -13,6 +13,10 @@ fn get_result_2(diskmap: &Vec<u64>) -> u64 {
     let mut total = 0;
     let mut free_blocks: Vec<(usize, u64)> = vec![];
 
+    let mut debug: Vec<Option<u64>> = std::iter::repeat_with(|| None)
+        .take((block_starts_at(diskmap.len() - 1, diskmap) + *diskmap.last().unwrap()) as usize)
+        .collect::<Vec<_>>();
+
     for i in (1..diskmap.len()).step_by(2) {
         free_blocks.push((i, diskmap[i]));
     }
@@ -23,20 +27,19 @@ fn get_result_2(diskmap: &Vec<u64>) -> u64 {
         let mut has_been_included = false;
 
         for (block_index, block_size) in free_blocks.iter_mut() {
-            if *block_size >= file_size {
-                println!("can include {file_id} in {block_index}");
-                for j in 0..file_size {
-                    total += (block_starts_at(*block_index, diskmap)
-                        + (diskmap[*block_index] - *block_size))
-                        + j * file_id as u64;
+            if *block_index > i {
+                break;
+            }
 
-                    println!(
-                        "{} * {}",
-                        block_starts_at(*block_index, diskmap)
-                            + (diskmap[*block_index] - *block_size)
-                            + j,
-                        file_id
-                    );
+            if *block_size >= file_size {
+                // println!("can include {file_id} in {block_index}");
+                for j in 0..file_size {
+                    let new_index = block_starts_at(*block_index, diskmap)
+                        + (diskmap[*block_index] - *block_size)
+                        + j;
+                    total += new_index * file_id as u64;
+
+                    debug[new_index as usize] = Some(file_id as u64);
                 }
                 *block_size -= file_size;
                 has_been_included = true;
@@ -45,11 +48,10 @@ fn get_result_2(diskmap: &Vec<u64>) -> u64 {
         }
 
         if !has_been_included {
-            println!("can't include {file_id}");
             for j in 0..file_size {
-                total += (block_starts_at(i, diskmap) + j) * file_id as u64;
-
-                println!("{} * {}", block_starts_at(i, diskmap) + j, file_id);
+                let new_index = block_starts_at(i, diskmap) + j;
+                total += new_index * file_id as u64;
+                debug[new_index as usize] = Some(file_id as u64);
             }
         }
     }
@@ -75,6 +77,7 @@ fn expand_diskmap(diskmap: &Vec<u64>) -> Vec<Option<u64>> {
     result
 }
 
+#[allow(dead_code)]
 fn print_diskmap(indexes: &Vec<Option<u64>>) {
     for index in indexes {
         print!(
@@ -91,8 +94,6 @@ fn print_diskmap(indexes: &Vec<Option<u64>>) {
 fn create_checksum(diskmap: &Vec<u64>) -> u64 {
     let mut expanded = expand_diskmap(diskmap);
     let mut total = 0;
-
-    // print_diskmap(&expanded);
 
     for i in 0..expanded.len() {
         if expanded[i..]
@@ -124,7 +125,6 @@ fn create_checksum(diskmap: &Vec<u64>) -> u64 {
             }
             expanded.swap(i, last_file);
         }
-        // print_diskmap(&expanded);
     }
 
     total
@@ -162,7 +162,7 @@ fn main() {
             let diskmap = parse_content(content);
 
             println!(
-                "{} == 2858",
+                "{}",
                 match part {
                     1 => get_result_1(&diskmap),
                     2 => get_result_2(&diskmap),
